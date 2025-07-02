@@ -1,0 +1,46 @@
+export const registerRegex = /^[А-ЯӨҮ]{2}[0-9]{8}$/;
+export const corpRegisterRegex = /^[0-9]{7}$/;
+export const carRegex = /^[0-9]{4}[А-ЯӨҮ]{3}$/;
+export const phoneRegex = /^[0-9]{8}$/;
+export const ageRegex = /^[0-9]{2}$/;
+export const LatitudeLongitudeRegex =
+  /^-?([0-9]{1,2}|1[0-7][0-9]|180)(\.[0-9]{1,10})$/;
+export const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/;
+export const currencyFormat = /^\d+(?:\.\d{0,2})?$/;
+export const isCompanyRegex = /^[1-9]{1}$/;
+export const cyrillicRegex = /^[а-яА-ЯөӨүҮёЁ_._?,\s]+$/; // Зөвхөн кирилл үсэг
+export const cyrillicSymbolsRegex =
+  /^[а-яА-ЯөӨүҮёЁ,-@:%,._+~#=[\]"/!$^&*(){};<>/'`|\\?№₮¥,\s]*$/; // Кирилл үсэг болон тэмдэгт
+export const cyrillicNumbersDotCommaRegex = /^[а-яА-ЯөӨүҮёЁ0-9_._?,\s]+$/; // Кирилл үсэг болон тоо, цэг, таслал
+export const orgRegisterRegex = /^/;
+export const registerRegexMsg = 'Регистрийн дугаар буруу эсвэл томоор';
+export const phoneRegexMsg = 'Утасны дугаар буруу';
+export const emailRegexMsg = 'И-мэйл хаяг буруу';
+export const currencyFormatMsg = 'Үнийн дүн буруу';
+export const requiredMsg = 'Заавал бөглөнө үү';
+export const min1Msg = '1-с илүү утга оруулна уу';
+export const min2Msg = '2-с илүү утга оруулна уу';
+export const max50Msg = 'Хамгийн ихдээ 50 тэмдэгт оруулна уу';
+export const max100Msg = 'Хамгийн ихдээ 100 тэмдэгт оруулна уу';
+export const max150Msg = 'Хамгийн ихдээ 150 тэмдэгт оруулна уу';
+export const max250msg = 'Хамгийн ихдээ 250 тэмдэгт оруулна уу';
+export const max500Msg = 'Хамгийн ихдээ 500 тэмдэгт оруулна уу';
+export const requiredSelectMsg = 'Заавал сонгоно уу';
+export const imageUploadMsg = 'Зураг(background) оруулна уу';
+export const logoUploadMsg = 'Лого зураг(logo) оруулна уу';
+export const isCompanyRegexMsg = 'Заавал сонгоно уу';
+export const confirmPasswordMsg = 'Нууц үгтэй адил биш байна';
+export const min3Msg = '3-аас их утга оруулна уу';
+export const min5Msg = '5-аас их утга оруулна уу';
+export const min6Msg = '6-аас их утга оруулна уу';
+export const min8Msg = '8-аас их утга оруулна уу';
+export const ageMsg = 'Нас буруу байна';
+export const lonMsg = 'Уртраг буруу байна';
+export const latMsg = 'Өргөрөг буруу байна';
+export const minPass = 'Нууц үгийн урт 8-с их 50-с бага байх шаардлагатай';
+export const cyrillicRegexMsg = 'Зөвхөн кирилл үсэг ашиглана уу';
+export const cyrillicSymbolsRegexMsg =
+  'Зөвхөн крилл үсэг болон тусгай тэмдэгтүүд оруулна уу';
+export const cyrillicNumbersDotCommaRegexMsg =
+  'Зөвхөн крилл үсэг болон тоо, таслал, цэг оруулна уу';
+export const chooseOneErrorMsg = 'Заавал сонгоно уу';
