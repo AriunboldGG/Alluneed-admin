@@ -17,6 +17,8 @@ import {
 import { useSnackbar } from 'notistack';
 // Default
 import Layout from 'src/layouts/dashboard';
+import useSwrFetcher from 'src/hooks/useSwrFetcher';
+import useSWR from 'swr';
 // Components
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
@@ -31,8 +33,6 @@ import { labelDisplayedRows } from 'src/components/table/utils';
 import { UserActionDialog } from 'src/sections/user/action';
 import { UserTableRow, UserTableToolbar } from 'src/sections/user/table';
 import { TABLE_HEAD } from 'src/sections/user/utils/schema';
-// Mock data
-import { mockUserData } from 'src/utils/mockData';
 
 UserListTable.getLayout = function getLayout(page) {
   return <Layout headTitle='Систем хэрэглэгчид'>{page}</Layout>;
@@ -42,56 +42,91 @@ export default function UserListTable() {
   const [dialogActionType, setDialogActionType] = useState('');
   const [filterModel, setFilterModel] = useState({});
   const [row, setRow] = useState({});
+  const { postFetcher } = useSwrFetcher();
   const { enqueueSnackbar } = useSnackbar();
   const { page, rowsPerPage, onChangePage, onChangeRowsPerPage } = useTable();
 
-  // Mock data state
-  const [tableData, setTableData] = useState({
-    data: [],
-    pagination: { total_elements: 0 }
-  });
-  const [roleData, setRoleData] = useState({ data: [] });
-  const [tableDataRef, setTableDataRef] = useState({ data: [] });
-  const [isLoading, setIsLoading] = useState(true);
-  const [roleDataLoading, setRoleDataLoading] = useState(true);
-  const [isLoadingRef, setIsLoadingRef] = useState(true);
-
-  // Simulate loading and data fetching
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      setRoleDataLoading(true);
-      setIsLoadingRef(true);
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Set mock data
-      setTableData({
-        data: mockUserData.users,
-        pagination: { total_elements: mockUserData.users.length }
-      });
-      setRoleData({ data: mockUserData.roles });
-      setTableDataRef({ data: mockUserData.references });
-
-      setIsLoading(false);
-      setRoleDataLoading(false);
-      setIsLoadingRef(false);
-    };
-
-    loadData();
-  }, []);
-
-  // Mock refresh function
-  const tableMutate = async () => {
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setTableData({
-      data: mockUserData.users,
-      pagination: { total_elements: mockUserData.users.length }
-    });
-    setIsLoading(false);
+  //Table List pagination
+  let pagination = {
+    pageNo: page + 1,
+    perPage: rowsPerPage,
+    filter: [],
+    sort: 'created_at desc',
   };
+
+  // swr
+  const {
+    data: tableData,
+    isLoading,
+    error,
+    mutate: tableMutate,
+    isValidating,
+  } = useSWR(['/users/list', true, pagination], (args) => postFetcher(args), {
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+  });
+  
+  console.log('Users table data:', tableData?.data);
+  console.log('First user role data:', tableData?.data?.[0]?.role);
+  
+  error &&
+    enqueueSnackbar('Өгөгдөл татахад алдаа гарлаа', { variant: 'warning' });
+
+  let paginationRoleList = {
+    pageNo: 1,
+    perPage: 1000,
+    filter: [],
+    sort: 'created_at desc',
+  };
+
+  const {
+    data: roleData,
+    isLoading: roleDataLoading,
+    error: roleErr,
+    isValidating: roleDataValidating,
+  } = useSWR(
+    ['/roles/list', true, paginationRoleList],
+    (args) => postFetcher(args),
+    {
+      revalidateOnFocus: false,
+      shouldRetryOnError: false,
+    }
+  );
+  
+  console.log('Role data:', roleData?.data);
+  
+  roleErr &&
+    enqueueSnackbar('Өгөгдөл татахад алдаа гарлаа', { variant: 'warning' });
+
+  let paginationRef = {
+    pageNo: 1,
+    perPage: 1000,
+    filter: [
+      {
+        field_name: 'code',
+        field_type: 'string',
+        operation: '=',
+        value: 'PCODE',
+      },
+    ],
+    sort: 'created_at desc',
+  };
+  // swr
+  const {
+    data: tableDataRef,
+    isLoading: isLoadingRef,
+    error: errorRef,
+    isValidating: isValidatingRef,
+  } = useSWR(
+    ['/references/list', true, paginationRef],
+    (args) => postFetcher(args),
+    {
+      revalidateOnFocus: false,
+      shouldRetryOnError: false,
+    }
+  );
+  errorRef &&
+    enqueueSnackbar('Өгөгдөл татахад алдаа гарлаа', { variant: 'warning' });
 
   //Function
   const handleUpdate = async (row) => {
@@ -138,7 +173,7 @@ export default function UserListTable() {
               <Table>
                 <TableHeadCustom headLabel={TABLE_HEAD} />
                 <TableBody>
-                  {isLoading ? (
+                  {isLoading || isValidating ? (
                     <TableSkeleton number={5} />
                   ) : (
                     <TableRenderBody data={tableData?.data}>

@@ -1,5 +1,5 @@
 // react
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 // mui
 import { Box, Card, Table, TableBody, Container, TableContainer, TablePagination, Typography, Button, Stack } from '@mui/material';
 // named import
@@ -14,8 +14,9 @@ import { TableHeadCustom, TableSkeleton, useTable, TableRenderBody } from 'src/c
 import { SettingsTableRow } from 'src/sections/reference/table';
 import { SettingsActionDialog } from 'src/sections/reference/action';
 import { TABLE_HEAD_SETTINGS } from 'src/sections/reference/utils/schema';
-// Mock data
-import { mockUserData } from 'src/utils/mockData';
+// SWR
+import useSWR from 'swr';
+import useSwrFetcher from 'src/hooks/useSwrFetcher';
 
 SettingsListTable.getLayout = function getLayout(page) {
     return <DashboardLayout headTitle="Reference">{page}</DashboardLayout>;
@@ -26,44 +27,29 @@ export default function SettingsListTable() {
     const [dialogActionType, setDialogActionType] = useState('');
     const [row, setRow] = useState({});
     const { page, rowsPerPage, onChangePage, onChangeRowsPerPage } = useTable();
+    const { postFetcher } = useSwrFetcher();
 
-    // Mock data state
-    const [tableData, setTableData] = useState({
-        data: [],
-        pagination: { total_elements: 0 }
-    });
-    const [isLoading, setIsLoading] = useState(true);
-
-    // Simulate loading and data fetching
-    useEffect(() => {
-        const loadData = async () => {
-            setIsLoading(true);
-
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Set mock data
-            setTableData({
-                data: mockUserData.references,
-                pagination: { total_elements: mockUserData.references.length }
-            });
-
-            setIsLoading(false);
-        };
-
-        loadData();
-    }, []);
-
-    // Mock refresh function
-    const tableMutate = async () => {
-        setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setTableData({
-            data: mockUserData.references,
-            pagination: { total_elements: mockUserData.references.length }
-        });
-        setIsLoading(false);
+    //Table List pagination
+    let pagination = {
+        pageNo: page + 1,
+        perPage: rowsPerPage,
+        filter: [],
+        sort: 'created_at desc',
     };
+
+    // swr
+    const {
+        data: tableData,
+        isLoading,
+        error,
+        mutate: tableMutate,
+        isValidating,
+    } = useSWR(['/references/list', true, pagination], (args) => postFetcher(args), {
+        revalidateOnFocus: false,
+        shouldRetryOnError: false,
+    });
+    error &&
+        enqueueSnackbar('Өгөгдөл татахад алдаа гарлаа', { variant: 'warning' });
 
     // functions
     const labelDisplayedRows = ({ to, count }) => {
@@ -100,7 +86,7 @@ export default function SettingsListTable() {
                             <Table>
                                 <TableHeadCustom headLabel={TABLE_HEAD_SETTINGS} />
                                 <TableBody>
-                                    {isLoading ? (
+                                    {isLoading || isValidating ? (
                                         <TableSkeleton number={5} />
                                     ) : (
                                         <TableRenderBody data={tableData?.data}>

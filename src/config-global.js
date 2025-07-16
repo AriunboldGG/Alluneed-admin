@@ -1,11 +1,11 @@
-export const HOST_API_KEY = process.env.HOST_API_KEY || '';
-export const HOST_API_IMAGE_KEY = process.env.HOST_API_IMAGE_KEY || '';
-export const HOST_IMAGE_UPLOAD_KEY = process.env.HOST_IMAGE_UPLOAD_KEY || '';
-export const HOST_FILE_UPLOAD_KEY = process.env.HOST_FILE_UPLOAD_KEY || '';
+export const HOST_API_KEY = 'http://localhost:8080';
+export const HOST_API_IMAGE_KEY = 'http://localhost:8080';
+export const HOST_IMAGE_UPLOAD_KEY = 'http://localhost:8080';
+export const HOST_FILE_UPLOAD_KEY = 'http://localhost:8080';
 
-export const LOGIN_URL = process.env.LOGIN_URL || '';
-export const LOGIN_AUTH_USERNAME = process.env.LOGIN_AUTH_USERNAME || '';
-export const LOGIN_AUTH_PASSWORD = process.env.LOGIN_AUTH_PASSWORD || '';
+export const LOGIN_URL = 'http://localhost:8080';
+export const LOGIN_AUTH_USERNAME = '';
+export const LOGIN_AUTH_PASSWORD = '';
 
 export const HEADER = {
     H_MOBILE: 64,

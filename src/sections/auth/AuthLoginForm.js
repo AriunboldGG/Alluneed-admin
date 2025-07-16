@@ -1,5 +1,5 @@
 //react
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 //mui
 import {
   Stack,
@@ -17,14 +17,14 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useAuthContext } from 'src/auth/useAuthContext';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
+import { HOST_API_KEY } from 'src/config-global';
 import { PATH_AUTH } from 'src/routes/paths';
 //default import
 import * as Yup from 'yup';
 import NextLink from 'next/link';
+import axios from 'axios';
 //components
 import Iconify from 'src/components/iconify';
-// Mock authentication
-import { mockAuth } from 'src/utils/mockData';
 
 export default function AuthLoginForm() {
   const {
@@ -38,7 +38,10 @@ export default function AuthLoginForm() {
     password: Yup.string().required('Нууц үгээ оруулна уу!'),
   });
 
-  const defaultValues = { email: '', password: '' };
+  const defaultValues = { 
+    email: 'admin@alluneed.com', 
+    password: 'admin123' 
+  };
 
   const methods = useForm({
     resolver: yupResolver(LoginSchema),
@@ -53,20 +56,50 @@ export default function AuthLoginForm() {
     formState: { errors, isSubmitting, isSubmitSuccessful },
   } = methods;
 
+  // Test backend connectivity
+  useEffect(() => {
+    const testBackend = async () => {
+      try {
+        const response = await axios.get(`${HOST_API_KEY}/swagger/index.html`);
+        console.log('Backend is reachable');
+      } catch (error) {
+        console.error('Backend connectivity test failed:', error);
+      }
+    };
+    testBackend();
+  }, []);
+
   const onSubmit = async (data) => {
     try {
-      const response = await mockAuth.login(data?.email, data?.password);
-      if (response?.token) {
-        signIn(response?.token);
+      console.log('Attempting login with:', { email: data?.email, password: '***' });
+      console.log('Login URL:', `${HOST_API_KEY}/auth/login`);
+      
+      const response = await axios.post(`${HOST_API_KEY}/auth/login`, {
+        email: data?.email,
+        password: data?.password,
+      });
+      
+      console.log('Login response:', response?.data);
+      
+      if (response?.data?.token) {
+        signIn(response?.data?.token);
       } else {
         reset();
-        setError('afterSubmit', { message: 'Login failed' });
+        setError('afterSubmit', { message: response?.data?.status || 'Login failed - no token received' });
       }
     } catch (error) {
+      console.error('Login error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
       reset();
       setError('afterSubmit', {
         ...error,
-        message: error.message || 'Алдаа гарлаа.Дахин оролдоно уу',
+        message:
+          error.response?.data?.responseMsg || 
+          error.response?.data?.message || 
+          error.message || 
+          'Алдаа гарлаа.Дахин оролдоно уу',
       });
     }
   };
@@ -77,10 +110,15 @@ export default function AuthLoginForm() {
         {!!errors.afterSubmit && (
           <Alert severity='error'>{errors.afterSubmit.message}</Alert>
         )}
-        <RHFTextField name='email' label='Нэвтрэх нэр' />
+        <RHFTextField 
+          name='email' 
+          label='Нэвтрэх нэр' 
+          placeholder='admin@alluneed.com'
+        />
         <RHFTextField
           name='password'
           label='Нууц үг'
+          placeholder='admin123'
           type={showPassword ? 'text' : 'password'}
           InputProps={{
             endAdornment: (

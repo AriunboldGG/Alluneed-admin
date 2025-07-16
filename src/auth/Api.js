@@ -1,5 +1,10 @@
 import React, { useEffect, useReducer } from 'react';
 import {
+  HOST_API_KEY,
+  HOST_IMAGE_UPLOAD_KEY,
+  HOST_FILE_UPLOAD_KEY,
+} from '../config-global';
+import {
   setSession,
   removeSession,
   tokenCheck,
@@ -7,7 +12,12 @@ import {
   jwtDecode,
 } from './utils';
 import AuthReducer from 'src/context/Auth/authReducer';
-import { mockAuth, mockUserData } from 'src/utils/mockData';
+import axios from 'axios';
+
+const instance = axios.create({
+  baseURL: HOST_API_KEY,
+  timeout: 30000,
+});
 
 export const Api = () => {
   const initialState = {
@@ -64,293 +74,159 @@ export const Api = () => {
         dispatch({ type: 'DYNAMIC_UPDATE', payload: obj });
       },
 
-      // Mock GET function
-      GET: async (url, isToken = false) => {
+      // Real GET function
+      GET: async (url, isToken = false, contentType = 'application/json', responseType = 'json') => {
         try {
-          // Simulate API delay
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Handle different endpoints
-          if (url.includes('/users/me')) {
-            const response = await mockAuth.getUserInfo(state?.userToken);
-            return response;
+          let response = await instance.get(
+            url,
+            isToken
+              ? {
+                  headers: {
+                    Authorization: `Bearer ${state?.userToken}`,
+                    'Content-Type': contentType,
+                  },
+                  responseType,
+                }
+              : ''
+          );
+          if (response?.status === 200 && response?.data) {
+            return response?.data;
           }
-          
-          if (url.includes('/users')) {
-            return {
-              success: true,
-              data: mockUserData.users,
-              total: mockUserData.users.length,
-            };
-          }
-          
-          if (url.includes('/campaigns')) {
-            return {
-              success: true,
-              data: mockUserData.campaigns,
-              total: mockUserData.campaigns.length,
-            };
-          }
-          
-          if (url.includes('/agencies')) {
-            return {
-              success: true,
-              data: mockUserData.agencies,
-              total: mockUserData.agencies.length,
-            };
-          }
-          
-          if (url.includes('/references')) {
-            return {
-              success: true,
-              data: mockUserData.references,
-              total: mockUserData.references.length,
-            };
-          }
-          
-          if (url.includes('/roles')) {
-            return {
-              success: true,
-              data: mockUserData.roles,
-              total: mockUserData.roles.length,
-            };
-          }
-          
-          // Default response
-          return {
-            success: true,
-            data: [],
-            total: 0,
-          };
         } catch (e) {
-          if (e?.message?.includes('expired') || e?.message?.includes('invalid')) {
+          if (e?.response?.status === 401) {
             handlers.logOut();
             toastExpireAccess();
           }
           const error = new Error();
-          error.status = 400;
+          error.status = e?.response?.status;
           throw error;
         }
       },
 
-      // Mock POST function
-      POST: async (url, isToken = false, data) => {
+      // Real POST function
+      POST: async (url, isToken = false, data, contentType = 'application/json', responseType = 'json') => {
         try {
-          // Simulate API delay
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Handle different endpoints
-          if (url.includes('/users')) {
-            const newUser = {
-              id: mockUserData.users.length + 1,
-              ...data,
-              createdAt: new Date().toISOString(),
-            };
-            mockUserData.users.push(newUser);
-            return {
-              success: true,
-              data: newUser,
-              message: 'User created successfully',
-            };
+          let response = await instance.post(
+            url,
+            data,
+            isToken
+              ? {
+                  headers: {
+                    Authorization: `Bearer ${state?.userToken}`,
+                    'Content-Type': contentType,
+                  },
+                  responseType,
+                }
+              : ''
+          );
+
+          if (response?.status === 200 && response?.data) {
+            return response.data;
           }
-          
-          if (url.includes('/campaigns')) {
-            const newCampaign = {
-              id: mockUserData.campaigns.length + 1,
-              ...data,
-              createdAt: new Date().toISOString(),
-            };
-            mockUserData.campaigns.push(newCampaign);
-            return {
-              success: true,
-              data: newCampaign,
-              message: 'Campaign created successfully',
-            };
-          }
-          
-          if (url.includes('/agencies')) {
-            const newAgency = {
-              id: mockUserData.agencies.length + 1,
-              ...data,
-              createdAt: new Date().toISOString(),
-            };
-            mockUserData.agencies.push(newAgency);
-            return {
-              success: true,
-              data: newAgency,
-              message: 'Agency created successfully',
-            };
-          }
-          
-          // Default response
-          return {
-            success: true,
-            data: data,
-            message: 'Created successfully',
-          };
         } catch (e) {
+          if (e?.response?.status === 401) {
+            handlers.logOut();
+            toastExpireAccess();
+          }
           const error = new Error();
-          error.status = 400;
+          error.status = e?.response?.status;
           throw error;
         }
       },
 
-      // Mock PUT function
+      // Real PUT function
       PUT: async (url, isToken = false, data) => {
         try {
-          // Simulate API delay
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Handle different endpoints
-          if (url.includes('/users')) {
-            const userId = data.id;
-            const userIndex = mockUserData.users.findIndex(u => u.id === userId);
-            if (userIndex !== -1) {
-              mockUserData.users[userIndex] = { ...mockUserData.users[userIndex], ...data };
-              return {
-                success: true,
-                data: mockUserData.users[userIndex],
-                message: 'User updated successfully',
-              };
-            }
+          let response = await instance.put(
+            url,
+            data,
+            isToken
+              ? {
+                  headers: {
+                    Authorization: `Bearer ${state.userToken}`,
+                  },
+                }
+              : ''
+          );
+          if (response?.status === 200 && response?.data) {
+            return response.data;
           }
-          
-          if (url.includes('/campaigns')) {
-            const campaignId = data.id;
-            const campaignIndex = mockUserData.campaigns.findIndex(c => c.id === campaignId);
-            if (campaignIndex !== -1) {
-              mockUserData.campaigns[campaignIndex] = { ...mockUserData.campaigns[campaignIndex], ...data };
-              return {
-                success: true,
-                data: mockUserData.campaigns[campaignIndex],
-                message: 'Campaign updated successfully',
-              };
-            }
-          }
-          
-          if (url.includes('/agencies')) {
-            const agencyId = data.id;
-            const agencyIndex = mockUserData.agencies.findIndex(a => a.id === agencyId);
-            if (agencyIndex !== -1) {
-              mockUserData.agencies[agencyIndex] = { ...mockUserData.agencies[agencyIndex], ...data };
-              return {
-                success: true,
-                data: mockUserData.agencies[agencyIndex],
-                message: 'Agency updated successfully',
-              };
-            }
-          }
-          
-          // Default response
-          return {
-            success: true,
-            data: data,
-            message: 'Updated successfully',
-          };
         } catch (e) {
+          if (e?.response?.status === 401) {
+            handlers.logOut();
+            toastExpireAccess();
+          }
           const error = new Error();
-          error.status = 400;
+          error.status = e?.response?.status;
           throw error;
         }
       },
 
-      // Mock DELETE function
-      DELETE: async (url, isToken = false) => {
+      // Real DELETE function
+      DELETE: async (url, isToken = false, responseType = 'json') => {
         try {
-          // Simulate API delay
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Extract ID from URL
-          const urlParts = url.split('/');
-          const id = parseInt(urlParts[urlParts.length - 1]);
-          
-          // Handle different endpoints
-          if (url.includes('/users')) {
-            const userIndex = mockUserData.users.findIndex(u => u.id === id);
-            if (userIndex !== -1) {
-              mockUserData.users.splice(userIndex, 1);
-              return {
-                success: true,
-                message: 'User deleted successfully',
-              };
-            }
+          let response = await instance.delete(
+            url,
+            isToken
+              ? {
+                  headers: {
+                    Authorization: `Bearer ${state.userToken}`,
+                  },
+                  responseType,
+                }
+              : ''
+          );
+          if (response?.status === 200 && response?.data) {
+            return response.data;
           }
-          
-          if (url.includes('/campaigns')) {
-            const campaignIndex = mockUserData.campaigns.findIndex(c => c.id === id);
-            if (campaignIndex !== -1) {
-              mockUserData.campaigns.splice(campaignIndex, 1);
-              return {
-                success: true,
-                message: 'Campaign deleted successfully',
-              };
-            }
-          }
-          
-          if (url.includes('/agencies')) {
-            const agencyIndex = mockUserData.agencies.findIndex(a => a.id === id);
-            if (agencyIndex !== -1) {
-              mockUserData.agencies.splice(agencyIndex, 1);
-              return {
-                success: true,
-                message: 'Agency deleted successfully',
-              };
-            }
-          }
-          
-          // Default response
-          return {
-            success: true,
-            message: 'Deleted successfully',
-          };
         } catch (e) {
+          if (e?.response?.status === 401) {
+            handlers.logOut();
+            toastExpireAccess();
+          }
           const error = new Error();
-          error.status = 400;
+          error.status = e?.response?.status;
           throw error;
         }
       },
 
-      // Mock IMAGEUPLOAD function
-      IMAGEUPLOAD: async (isToken = false, data) => {
+      // Real IMAGEUPLOAD function
+      IMAGEUPLOAD: async (isToken = false, data, contentType) => {
         try {
-          // Simulate API delay
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Return mock image URL
-          return {
-            success: true,
-            data: {
-              url: 'https://via.placeholder.com/300x300?text=Uploaded+Image',
-              filename: 'uploaded-image.jpg',
-            },
-            message: 'Image uploaded successfully',
-          };
+          return await axios.post(
+            `${HOST_IMAGE_UPLOAD_KEY}`,
+            data,
+            isToken
+              ? {
+                  headers: {
+                    Authorization: `Bearer ${state.userToken}`,
+                    'Content-Type': contentType,
+                  },
+                }
+              : ''
+          );
         } catch (e) {
-          const error = new Error();
-          error.status = 400;
-          throw error;
+          return e;
         }
       },
 
-      // Mock FILEUPLOAD function
-      FILEUPLOAD: async (isToken = false, data) => {
+      // Real FILEUPLOAD function
+      FILEUPLOAD: async (isToken = false, data, contentType) => {
         try {
-          // Simulate API delay
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Return mock file URL
-          return {
-            success: true,
-            data: {
-              url: 'https://via.placeholder.com/300x300?text=Uploaded+File',
-              filename: 'uploaded-file.pdf',
-            },
-            message: 'File uploaded successfully',
-          };
+          return await axios.post(
+            `${HOST_FILE_UPLOAD_KEY}${url}`,
+            data,
+            isToken
+              ? {
+                  headers: {
+                    Authorization: `Bearer ${state.userToken}`,
+                    'Content-Type': contentType,
+                  },
+                }
+              : ''
+          );
         } catch (e) {
-          const error = new Error();
-          error.status = 400;
-          throw error;
+          return e;
         }
       },
     }),

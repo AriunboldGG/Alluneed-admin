@@ -58,6 +58,9 @@ export default function UserTableRow({
     photo2,
   } = row;
 
+  console.log('User row data:', row);
+  console.log('User role:', role);
+
   const { trigger } = useSWRMutation(
     [`/users/${id}`, true],
     (args) => deleteFetcher(args),
@@ -144,7 +147,7 @@ export default function UserTableRow({
       </TableCell>
 
       <TableCell align='left' color='gray' sx={{ textTransform: 'capitalize' }}>
-        {role?.name || 'Админ'}
+        {role || 'Админ'}
       </TableCell>
       <TableCell align='left' color='gray' sx={{ textTransform: 'capitalize' }}>
         {location}

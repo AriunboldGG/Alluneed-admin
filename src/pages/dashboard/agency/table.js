@@ -1,5 +1,5 @@
 ///React
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 ///Named
 import { useRouter } from 'next/router';
 import { useSnackbar } from 'notistack';
@@ -17,8 +17,9 @@ import { useAuthContext } from 'src/auth/useAuthContext';
 import { AgencyActionDialog } from 'src/sections/agency/action';
 import { AgencyTableRow } from 'src/sections/agency/table';
 import { TABLE_HEAD } from 'src/sections/agency/utils/schema';
-// Mock data
-import { mockUserData } from 'src/utils/mockData';
+// SWR
+import useSWR from 'swr';
+import useSwrFetcher from 'src/hooks/useSwrFetcher';
 
 AgencyTable.getLayout = function getLayout(page) {
     return <Layout headTitle='Агентууд'>{page}</Layout>;
@@ -34,44 +35,29 @@ export default function AgencyTable() {
     const [dialogActionType, setDialogActionType] = useState('');
     const [filterModel, setFilterModel] = useState({});
     const [row, setRow] = useState({});
+    const { postFetcher } = useSwrFetcher();
 
-    // Mock data state
-    const [tableData, setTableData] = useState({
-        data: [],
-        pagination: { total_elements: 0 }
-    });
-    const [isLoading, setIsLoading] = useState(true);
-
-    // Simulate loading and data fetching
-    useEffect(() => {
-        const loadData = async () => {
-            setIsLoading(true);
-
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Set mock data
-            setTableData({
-                data: mockUserData.agencies,
-                pagination: { total_elements: mockUserData.agencies.length }
-            });
-
-            setIsLoading(false);
-        };
-
-        loadData();
-    }, []);
-
-    // Mock refresh function
-    const tableMutate = async () => {
-        setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setTableData({
-            data: mockUserData.agencies,
-            pagination: { total_elements: mockUserData.agencies.length }
-        });
-        setIsLoading(false);
+    //Table List pagination
+    let pagination = {
+        pageNo: page + 1,
+        perPage: rowsPerPage,
+        filter: [],
+        sort: 'created_at desc',
     };
+
+    // swr
+    const {
+        data: tableData,
+        isLoading,
+        error,
+        mutate: tableMutate,
+        isValidating,
+    } = useSWR(['/agencies/list', true, pagination], (args) => postFetcher(args), {
+        revalidateOnFocus: false,
+        shouldRetryOnError: false,
+    });
+    error &&
+        enqueueSnackbar('Өгөгдөл татахад алдаа гарлаа', { variant: 'warning' });
 
     //Function
     const handleUpdate = async (row) => {
@@ -110,7 +96,7 @@ export default function AgencyTable() {
                             <Table>
                                 <TableHeadCustom headLabel={TABLE_HEAD} />
                                 <TableBody>
-                                    {isLoading ? (
+                                    {isLoading || isValidating ? (
                                         <TableSkeleton number={5} />
                                     ) : (
                                         <TableRenderBody data={tableData?.data}>
